@@ -73,22 +73,23 @@ def read_conf_file():
 					line_list = conf_line.split(',')
 					
 					rule_name = line_list[0]
-					asn = line_list[1]
-					try:
-						int(asn)
-					except ValueError as e:
-						print(str(e))
-						logging.error("ASN format error: " + str(e))
-						sys.exit()
-					else:
-						if rule_name in conf_dict.keys():
-							if asn in conf_dict[rule_name]:
-								pass
-							else:
-								conf_dict[rule_name].append(asn)
+					asn_list = line_list[1:]
+					for asn in asn_list:
+						try:
+							int(asn)
+						except ValueError as e:
+							print(str(e))
+							logging.error("ASN format error: " + str(e))
+							sys.exit()
 						else:
-							conf_dict[rule_name] = []
-							conf_dict[rule_name].append(asn)
+							if rule_name in conf_dict.keys():
+								if asn in conf_dict[rule_name]:
+									pass
+								else:
+									conf_dict[rule_name].append(asn)
+							else:
+								conf_dict[rule_name] = []
+								conf_dict[rule_name].append(asn)
 					
 					conf_line = conf_file.readline().strip('\n')
 
