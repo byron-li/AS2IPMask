@@ -17,11 +17,11 @@ from openpyxl import Workbook
 from configparser import ConfigParser
 
 
-download_file = ""
-pfx2as_log = "pfx2as-creation.log"
-
 asn_ipmask = {}
 asn_info = {}
+
+download_file = ""
+pfx2as_log = "pfx2as-creation.log"
 
 log_name = "as2ipmask.log"
 log_format = "%(asctime)s [%(levelname)s] %(message)s"
@@ -42,6 +42,47 @@ def _callback_func(num, block_size, total_size):
 
 def tail(filename, n):
 	return deque(open(filename), n)
+
+
+def read_pfx2as_file(filename):
+	print(">> processing file: " + filename)
+	global asn_ipmask
+
+	with open(filename, "r") as input_file:
+		infile_line = input_file.readline().strip('\n')
+
+		while(infile_line):
+			as_list = []
+			sub_ip_list = []
+			line_list = infile_line.split()
+			
+			ip = line_list[0]
+			mask = line_list[1]
+			asn = line_list[2]
+
+			if(int(mask) < 16):
+				ip_mask = IPNetwork(ip + "/" + mask)
+				sub_ip_list = list(ip_mask.subnet(16))
+			else:
+				sub_ip_list.append(ip + "/" + mask)
+
+			if ',' in asn or '_' in asn:
+				as_list = re.split('[,_]', asn)
+			else:
+				as_list.append(asn)
+
+			for as_num in as_list:
+				for sub_ip_mask in sub_ip_list:
+					if as_num in asn_ipmask.keys():
+						if str(sub_ip_mask) in asn_ipmask[as_num]:
+							pass
+						else:
+							asn_ipmask[as_num].append(str(sub_ip_mask))
+					else:
+						asn_ipmask[as_num] = []
+						asn_ipmask[as_num].append(str(sub_ip_mask))
+			
+			infile_line = input_file.readline().strip('\n')
 
 
 def download_pfx2as_file(log_url, prefix_url, del_filename):
@@ -89,64 +130,45 @@ def download_pfx2as_file(log_url, prefix_url, del_filename):
 	read_pfx2as_file(latest_file)
 
 
-def read_pfx2as_file(filename):
-	global asn_ipmask
+def read_asn_info(filename):
 	print(">> processing file: " + filename)
 
-	with open(filename, "r") as input_file:
+	global asn_info
+	asn_info.clear()
+
+	with open(filename, "r", encoding = "ISO-8859-1") as input_file:
 		infile_line = input_file.readline().strip('\n')
+		pattern = re.compile(r'<a href="/cgi-bin/as-report\?as=.*">AS(.*)</a>(.*)')
 
 		while(infile_line):
-			as_list = []
-			sub_ip_list = []
-			line_list = infile_line.split()
-			
-			ip = line_list[0]
-			mask = line_list[1]
-			asn = line_list[2]
+			result = pattern.findall(infile_line)
+			if(result):
+				key = result[0][0].strip()
+				value = result[0][1].strip()
+				asn_info[key] = value
 
-			if(int(mask) < 16):
-				ip_mask = IPNetwork(ip + "/" + mask)
-				sub_ip_list = list(ip_mask.subnet(16))
-			else:
-				sub_ip_list.append(ip + "/" + mask)
-
-			if ',' in asn or '_' in asn:
-				as_list = re.split('[,_]', asn)
-			else:
-				as_list.append(asn)
-
-			for as_num in as_list:
-				for sub_ip_mask in sub_ip_list:
-					if as_num in asn_ipmask.keys():
-						if str(sub_ip_mask) in asn_ipmask[as_num]:
-							pass
-						else:
-							asn_ipmask[as_num].append(str(sub_ip_mask))
-					else:
-						asn_ipmask[as_num] = []
-						asn_ipmask[as_num].append(str(sub_ip_mask))
-			
 			infile_line = input_file.readline().strip('\n')
 
 
 def download_asn_info():
-	global asn_info
 	global download_file
 
+	asn_info_file = ""
 	download_file = "asn_info"
 	del_asn_info = "asn_info_*"
-	asn_info_url = "https://www.cidr-report.org/as2.0/autnums.html"
-	asn_info_file = download_file + "_" + time.strftime("%Y%m%d", time.localtime())
+	asn_info_latest = download_file + "_" + time.strftime("%Y%m%d", time.localtime())
 
-	if os.path.isfile(asn_info_file):
-		pass
+	asn_info_url = "https://www.cidr-report.org/as2.0/autnums.html"
+
+	if os.path.isfile(asn_info_latest):
+		asn_info_file = asn_info_latest
 	
 	else:
 		try:
 			urllib.request.urlretrieve(asn_info_url, download_file, _callback_func)
+			asn_info_file = download_file
 
-		except Exception as e:
+		except Exception as e:		#	if download fails
 			print()
 			print(str(e))
 			logging.error(str(e))
@@ -158,27 +180,54 @@ def download_asn_info():
 			else:
 				logging.error("Failed to download the latest ASN_INFO File and no previous version exists. No ASN_INFO records in xlsx file.")
 				asn_info_file = ""
+			
+			os.remove(download_file)
+
+	try:
+		if(asn_info_file):
+			read_asn_info(asn_info_file)
+
+	except Exception as e:		#	if reading latest file fails
+		print(str(e))
+		logging.error(str(e))
+
+		if(glob.glob(del_asn_info)):
+			logging.error("Failed to read the latest ASN_INFO File, use the previous version.")
+			asn_info_file = glob.glob(del_asn_info)[0]
+			read_asn_info(asn_info_file)
 
 		else:
+			logging.error("Failed to read the latest ASN_INFO File and no previous version exists. No ASN_INFO records in xlsx file.")
+
+	else:
+		if(asn_info_file == download_file):
 			if glob.glob(del_asn_info):
 				for path in glob.glob(del_asn_info):
 					os.remove(path)
-			print(">> old asn_info file has been removed")
-			os.rename(download_file, asn_info_file)
+				print(">> old asn_info file has been removed")
 
-	if(asn_info_file):
-		with open(asn_info_file, "r", encoding = "ISO-8859-1") as input_file:
-			infile_line = input_file.readline().strip('\n')
-			pattern = re.compile(r'<a href="/cgi-bin/as-report\?as=.*">AS(.*)</a>(.*)')
+			os.rename(asn_info_file, asn_info_latest)
 
-			while(infile_line):
-				result = pattern.findall(infile_line)
-				if(result):
-					key = result[0][0].strip()
-					value = result[0][1].strip()
-					asn_info[key] = value
 
-				infile_line = input_file.readline().strip('\n')
+def lookup_asn_info(asn):
+	asn_item_info = {}
+	asn_item_info["as_name"] = ""
+	asn_item_info["details"] = ""
+	asn_item_info["country_code"] = ""
+
+	if asn in asn_info.keys():
+		asn_item_info["details"] = asn_info[asn]
+		asn_info_list1 = asn_info[asn].split(" - ")
+		asn_info_list2 = asn_info[asn].split(", ")
+
+		if(len(asn_info_list1) > 1):
+			asn_item_info["as_name"]= asn_info_list1[0]
+		else:
+			asn_item_info["as_name"] = asn_info_list2[0]
+
+		asn_item_info["country_code"] = asn_info_list2[-1]
+
+	return asn_item_info
 
 
 def write_to_excel(conf_list):
@@ -190,41 +239,41 @@ def write_to_excel(conf_list):
 	ws = wb.active
 	ws.append(title)
 
-	for asn in conf_list:
-		asn = asn.strip()
+	if((len(conf_list) == 1) & (conf_list[0].strip().lower() == "all")):
+		for asn in asn_ipmask.keys():
+			an_asn_info = lookup_asn_info(asn)
 
-		if(asn):
-			if asn in asn_ipmask.keys():
-				as_name = ""
-				details = ""
-				country_code = ""
+			for ip_mask in asn_ipmask[asn]:
+				row = []
+				row.append(an_asn_info["as_name"])
+				row.append(asn)
+				row.append(ip_mask)
+				row.append(an_asn_info["details"])
+				row.append(an_asn_info["country_code"])
+				ws.append(row)
 
-				if asn in asn_info.keys():
-					details = asn_info[asn]
-					asn_info_list1 = details.split(" - ")
-					asn_info_list2 = details.split(", ")
+	else:
+		for asn in conf_list:
+			asn = asn.strip()
 
-					if(len(asn_info_list1) > 1):
-						as_name = asn_info_list1[0]
-					else:
-						as_name = asn_info_list2[0]
+			if(asn):
+				if asn in asn_ipmask.keys():
+					an_asn_info = lookup_asn_info(asn)
 
-					country_code = asn_info_list2[-1]
-
-				for ip_mask in asn_ipmask[asn]:
-					row = []
-					row.append(as_name)
-					row.append(asn)
-					row.append(ip_mask)
-					row.append(details)
-					row.append(country_code)
-					ws.append(row)
-					
+					for ip_mask in asn_ipmask[asn]:
+						row = []
+						row.append(an_asn_info["as_name"])
+						row.append(asn)
+						row.append(ip_mask)
+						row.append(an_asn_info["details"])
+						row.append(an_asn_info["country_code"])
+						ws.append(row)
+						
+				else:
+					print("Warning: AS" + str(asn) + " is not in CAIDA file, Your configuration may not take effect!")
+					logging.warning("AS" + str(asn) + " is not in CAIDA file, Your configuration may not take effect!")
 			else:
-				print("Warning: AS" + str(asn) + " is not in CAIDA file, Your configuration may not take effect!")
-				logging.warning("AS" + str(asn) + " is not in CAIDA file, Your configuration may not take effect!")
-		else:
-			continue
+				continue
 
 	try:
 		wb.save(outfile_name)
