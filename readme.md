@@ -9,7 +9,7 @@
 *	配置文件位于 conf 目录下
 	*	config.ini: 程序配置文件, 包含 [IP], [ASN] 两 section
 		*	IP Sect: 指定获取对应ASN对应IP段: IPv4(4) /IPv6(6)/ 全部(all)
-		*	ASN Sect: 输入 ASN, 逗号分隔
+		*	ASN Sect: 输入 ASN, 逗号分隔. 支持 pfx2as 中全部 ASN (all)
 
 ###	逻辑
 *	从配置文件中读取 ASN, 检查 ASN 是否在 pfx2as 中
