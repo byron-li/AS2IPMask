@@ -19,7 +19,8 @@
 
 ### 输出
 
-*	全量式输出, 覆盖上一次结果, 输出文件名: AS_IP_mapping.xlsx
+*	全量式输出, 覆盖上次结果
+*	输出文件名: AS_IP_mapping.xlsx
 *	数据示例  
 
 |	AS Name		|	ASN		|	Server IP	|	Details	|Country Code |  
