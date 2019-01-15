@@ -16,8 +16,6 @@ from netaddr import IPNetwork
 from openpyxl import Workbook
 from configparser import ConfigParser
 
-
-asn_ipmask = {}
 asn_info = {}
 
 download_file = ""
@@ -44,9 +42,8 @@ def tail(filename, n):
 	return deque(open(filename), n)
 
 
-def read_pfx2as_file(filename):
+def read_pfx2as_file(filename, asn_ipmask):
 	print(">> processing file: " + filename)
-	global asn_ipmask
 
 	with open(filename, "r") as input_file:
 		infile_line = input_file.readline().strip('\n')
@@ -127,7 +124,7 @@ def download_pfx2as_file(log_url, prefix_url, del_filename):
 			unzip = gzip.GzipFile(mode="rb", fileobj=open(download_file, 'rb'))
 			open(latest_file, "wb").write(unzip.read())
 
-	read_pfx2as_file(latest_file)
+	return latest_file
 
 
 def read_asn_info(filename):
@@ -230,10 +227,9 @@ def lookup_asn_info(asn):
 	return asn_item_info
 
 
-def write_to_excel(conf_list):
+def write_to_excel(conf_list, asn_ipmask, outfile_name):
 	print(">> saving configuration to excel")
 
-	outfile_name = "AS_IP_mapping.xlsx"
 	title = ['AS Name', 'ASN', 'Server IP', 'Details', 'Country Code']
 	wb = Workbook()
 	ws = wb.active
@@ -297,6 +293,14 @@ def main():
 	del_v6_file = "routeviews-rv6-*-*.pfx2as*"
 
 	cfg = ConfigParser()
+	
+	out_file_v4 = "AS_IP_mapping_v4.xlsx"
+	out_file_v6 = "AS_IP_mapping_v6.xlsx"
+	pfx2as_file_v4 = ""
+	pfx2as_file_v6 = ""
+	
+	asn_ipmask_v4 = {}
+	asn_ipmask_v6 = {}
 	asn_conf = []
 	
 	try:
@@ -309,23 +313,33 @@ def main():
 		logging.error(str(e) + ", check config.ini.")
 		sys.exit()
 
+	download_asn_info()
+
 	if(ip_ver == "4"):
-		download_pfx2as_file(log_v4_url, prefix_v4_url, del_v4_file)
+		out_file_v4 = "AS_IP_mapping_v4.xlsx"
+		pfx2as_file_v4 = download_pfx2as_file(log_v4_url, prefix_v4_url, del_v4_file)
+		read_pfx2as_file(pfx2as_file_v4, asn_ipmask_v4)
+		write_to_excel(asn_conf, asn_ipmask_v4, out_file_v4)
 
 	elif(ip_ver == "6"):
-		download_pfx2as_file(log_v6_url, prefix_v6_url, del_v6_file)
+		out_file = "AS_IP_mapping_v6.xlsx"
+		pfx2as_file_v6 = download_pfx2as_file(log_v6_url, prefix_v6_url, del_v6_file)
+		read_pfx2as_file(pfx2as_file_v6, asn_ipmask_v6)
+		write_to_excel(asn_conf, asn_ipmask_v6, out_file_v6)
 
 	elif(ip_ver.lower() == "all"):
-		download_pfx2as_file(log_v4_url, prefix_v4_url, del_v4_file)
-		download_pfx2as_file(log_v6_url, prefix_v6_url, del_v6_file)
+		pfx2as_file_v4 = download_pfx2as_file(log_v4_url, prefix_v4_url, del_v4_file)
+		pfx2as_file_v6 = download_pfx2as_file(log_v6_url, prefix_v6_url, del_v6_file)
+		read_pfx2as_file(pfx2as_file_v4, asn_ipmask_v4)
+		read_pfx2as_file(pfx2as_file_v6, asn_ipmask_v6)
+		write_to_excel(asn_conf, asn_ipmask_v4, out_file_v4)
+		write_to_excel(asn_conf, asn_ipmask_v6, out_file_v6)
 
 	else:
 		print("IP version value error, check config.ini.")
 		logging.error("IP version value error, check config.ini.")
 		sys.exit()
 
-	download_asn_info()
-	write_to_excel(asn_conf)
 	os.system("pause")
 
 if __name__ == '__main__':

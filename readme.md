@@ -7,7 +7,7 @@
 ### 配置
 
 *	配置文件位于 conf 目录下
-	*	config.ini: 程序配置文件, 包含 [IP], [ASN] 两 section
+	*	config.ini: 程序配置文件, 包含 [IP], [ASN] sections
 		*	IP Sect: 指定获取对应ASN对应IP段: IPv4(4) /IPv6(6)/ 全部(all)
 		*	ASN Sect: 输入 ASN, 逗号分隔. 支持 pfx2as 中全部 ASN (all)
 
@@ -20,7 +20,7 @@
 ### 输出
 
 *	全量式输出, 覆盖上次结果
-*	输出文件名: AS_IP_mapping.xlsx
+*	输出文件名: AS_IP_mapping_v4(6).xlsx, IPv4 与 IPv6 分开
 *	数据示例  
 
 |	AS Name		|	ASN		|	Server IP	|	Details	|Country Code |  
