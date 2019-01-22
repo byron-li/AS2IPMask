@@ -5,6 +5,7 @@
 import os
 import re
 import sys
+import ssl
 import time
 import gzip
 import glob
@@ -21,11 +22,12 @@ asn_info = {}
 download_file = ""
 pfx2as_log = "pfx2as-creation.log"
 
+socket.setdefaulttimeout(30)
+ssl._create_default_https_context = ssl._create_unverified_context
+
 log_name = "as2ipmask.log"
 log_format = "%(asctime)s [%(levelname)s] %(message)s"
 logging.basicConfig(level=logging.DEBUG, filemode='a', format=log_format, filename=log_name)
-
-socket.setdefaulttimeout(30)
 
 
 def _callback_func(num, block_size, total_size):
@@ -218,11 +220,13 @@ def lookup_asn_info(asn):
 		asn_info_list2 = asn_info[asn].split(", ")
 
 		if(len(asn_info_list1) > 1):
-			asn_item_info["as_name"]= asn_info_list1[0]
+			asn_item_info["as_name"] = asn_info_list1[0]
 		else:
-			asn_item_info["as_name"] = asn_info_list2[0]
+			if(len(asn_info_list2) > 1):
+				asn_item_info["as_name"] = asn_info_list2[0]
 
-		asn_item_info["country_code"] = asn_info_list2[-1]
+		if(len(asn_info_list2) > 1):
+			asn_item_info["country_code"] = asn_info_list2[-1]
 
 	return asn_item_info
 
@@ -294,8 +298,8 @@ def main():
 
 	cfg = ConfigParser()
 	
-	out_file_v4 = "AS_IP_mapping_v4.xlsx"
-	out_file_v6 = "AS_IP_mapping_v6.xlsx"
+	out_file_v4 = "AS_IP_mapping_v4_" + time.strftime("%Y%m%d", time.localtime()) + ".xlsx"
+	out_file_v6 = "AS_IP_mapping_v6_" + time.strftime("%Y%m%d", time.localtime()) + ".xlsx"
 	pfx2as_file_v4 = ""
 	pfx2as_file_v6 = ""
 	
