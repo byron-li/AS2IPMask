@@ -1,7 +1,7 @@
 ## AS2IPMask:
 
 *	从 [CAIDA](https://www.caida.org/data/routing/routeviews-prefix2as.xml) 获取最新 pfx2as 数据
-*	从 [CIDR](http://www.cidr-report.org/as2.0/) 获取ASN注册信息
+*	从 [CIDR](http://www.cidr-report.org/as2.0/) & [IANA Whois server](whois.iana.org) 获取ASN注册信息
 *	根据配置 ASN, 输出其 IP 地址段 (掩码格式转换为>=16) 及相关注册信息, 保存为 xlsx 格式文件
 
 ### 配置
@@ -14,13 +14,14 @@
 ###	逻辑
 *	从配置文件中读取 ASN, 检查 ASN 是否在 pfx2as 中
 	*	若文件中存在该 ASN, 填充 ASN info, 写入 xlsx
+		*	若 ASN info 信息不全, 辅以 whois 查询结果 (completion version)
 	*	若不存在, 记入日志, 不写入结果文件
 
 
 ### 输出
 
 *	全量式输出, 覆盖上次结果
-*	输出文件名: AS_IP_mapping_v4(6).xlsx, IPv4 与 IPv6 分开
+*	输出文件名: AS_IP_mapping_v4(6)\_YMD.xlsx, 输出结果 IPv4 与 IPv6 分开
 *	数据示例  
 
 |	AS Name		|	ASN		|	Server IP	|	Details	|Country Code |  
