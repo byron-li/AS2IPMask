@@ -100,10 +100,17 @@ def download_pfx2as_file(log_url, prefix_url, del_filename):
 		sys.exit()
 
 	latest = tail(pfx2as_log, 1)
-	suffix_url = latest[0].split()[2]
 
-	download_file = suffix_url.split('/')[2]
-	latest_file = download_file.replace(".gz", "")
+	try:
+		suffix_url = latest[0].split()[2]
+		download_file = suffix_url.split('/')[2]
+		latest_file = download_file.replace(".gz", "")
+
+	except Exception as e:
+		print(str(e))
+		logging.error(str(e))
+		logging.error("Can not check pfx2as file version, program exit.")
+		sys.exit()
 
 	if os.path.isfile(latest_file):
 		pass
