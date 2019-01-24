@@ -20,13 +20,15 @@
 
 ### 输出
 
-*	全量式输出, 覆盖上次结果
-*	输出文件名: AS_IP_mapping_v4(6)\_YMD.xlsx, 输出结果 IPv4 与 IPv6 分开
-*	数据示例  
+* 全量式输出, 覆盖上次结果
 
-|	AS Name		|	ASN		|	Server IP	|	Details	|Country Code |  
- :---: | :---:| :---:|:---: | :---:
-|7171-W-95TH-STREET|23333|	209.201.98.0/24|7171-W-95TH-STREET - WeightWatchers.com, Inc., US|US|  
+* 输出文件名: AS_IP_mapping_v4(6)\_YMD.xlsx, 输出结果 IPv4 与 IPv6 分开
+
+* 数据示例
+
+  |      AS Name       |  ASN  |    Server IP    |                      Details                      | Country Code |
+  | :----------------: | :---: | :-------------: | :-----------------------------------------------: | :----------: |
+  | 7171-W-95TH-STREET | 23333 | 209.201.98.0/24 | 7171-W-95TH-STREET - WeightWatchers.com, Inc., US |      US      |
 
 
 ### 日志
