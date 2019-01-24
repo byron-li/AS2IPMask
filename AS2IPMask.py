@@ -242,8 +242,8 @@ def write_to_excel(conf_list, asn_ipmask, outfile_name):
 	print(">> saving configuration to excel")
 
 	title = ['AS Name', 'ASN', 'Server IP', 'Details', 'Country Code']
-	wb = Workbook()
-	ws = wb.active
+	wb = Workbook(write_only=True)
+	ws = wb.create_sheet()
 	ws.append(title)
 
 	if((len(conf_list) == 1) & (conf_list[0].strip().lower() == "all")):
