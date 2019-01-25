@@ -240,7 +240,7 @@ def whois(query):
 				break 
 
 	except Exception as e:
-		logging.warning(str(e) + ". ASN " + str(query) + " field set to default.")
+		logging.warning(str(e) + " ASN " + str(query) + " field set to default.")
 
 	else:
 		pattern = re.compile(r'descr:(.*)')
@@ -298,9 +298,13 @@ def lookup_asn_info(asn):
 	return asn_item_info
 
 
-def write_to_excel(conf_list, asn_ipmask, outfile_name):
-	print(">> saving configuration to excel")
+def write_to_excel(conf_list, asn_ipmask, outfile_name, del_filename):
+	if glob.glob(del_filename):
+		for path in glob.glob(del_filename):
+			os.remove(path)
+		print(">> old as_ip_mapping xlsx file has been removed")
 
+	print(">> saving configuration to excel")
 	title = ['AS Name', 'ASN', 'Server IP', 'Details', 'Country Code']
 	wb = Workbook(write_only=True)
 	ws = wb.create_sheet()
@@ -363,6 +367,9 @@ def main():
 	del_v4_file = dir_path + "routeviews-rv2-*-*.pfx2as*"
 	del_v6_file = dir_path + "routeviews-rv6-*-*.pfx2as*"
 
+	del_v4_xlsx = dir_path + "AS_IP_mapping_v4_*.xlsx"
+	del_v6_xlsx = dir_path + "AS_IP_mapping_v6_*.xlsx"
+
 	cfg = ConfigParser()
 	
 	out_file_v4 = dir_path + "AS_IP_mapping_v4_" + localtime + ".xlsx"
@@ -389,20 +396,20 @@ def main():
 	if(ip_ver == "4"):
 		pfx2as_file_v4 = download_pfx2as_file(log_v4_url, prefix_v4_url, del_v4_file)
 		read_pfx2as_file(pfx2as_file_v4, asn_ipmask_v4)
-		write_to_excel(asn_conf, asn_ipmask_v4, out_file_v4)
+		write_to_excel(asn_conf, asn_ipmask_v4, out_file_v4, del_v4_xlsx)
 
 	elif(ip_ver == "6"):
 		pfx2as_file_v6 = download_pfx2as_file(log_v6_url, prefix_v6_url, del_v6_file)
 		read_pfx2as_file(pfx2as_file_v6, asn_ipmask_v6)
-		write_to_excel(asn_conf, asn_ipmask_v6, out_file_v6)
+		write_to_excel(asn_conf, asn_ipmask_v6, out_file_v6, del_v6_xlsx)
 
 	elif(ip_ver.lower() == "all"):
 		pfx2as_file_v4 = download_pfx2as_file(log_v4_url, prefix_v4_url, del_v4_file)
 		pfx2as_file_v6 = download_pfx2as_file(log_v6_url, prefix_v6_url, del_v6_file)
 		read_pfx2as_file(pfx2as_file_v4, asn_ipmask_v4)
 		read_pfx2as_file(pfx2as_file_v6, asn_ipmask_v6)
-		write_to_excel(asn_conf, asn_ipmask_v4, out_file_v4)
-		write_to_excel(asn_conf, asn_ipmask_v6, out_file_v6)
+		write_to_excel(asn_conf, asn_ipmask_v4, out_file_v4, del_v4_xlsx)
+		write_to_excel(asn_conf, asn_ipmask_v6, out_file_v6, del_v6_xlsx)
 
 	else:
 		print("IP version value error, check config.ini.")
