@@ -27,7 +27,7 @@ localtime = time.strftime("%Y%m%d", time.localtime())
 dir_path = os.path.realpath(sys.argv[0])
 dir_path = dir_path.replace(dir_path.split(os.sep)[-1], "")
 
-download_file = dir_path
+download_file = ""
 pfx2as_log = "pfx2as-creation.log"
 
 log_name = dir_path + "as2ipmask.log"
@@ -96,7 +96,7 @@ def download_pfx2as_file(log_url, prefix_url, del_filename):
 	latest_file = ""
 
 	try:
-		urllib.request.urlretrieve(log_url, dir_path + pfx2as_log)
+		urllib.request.urlretrieve(log_url, dir_path+pfx2as_log)
 
 	except Exception as e:
 		print(str(e))
@@ -104,7 +104,7 @@ def download_pfx2as_file(log_url, prefix_url, del_filename):
 		logging.error("Can not check pfx2as file version, program exit.")
 		sys.exit()
 
-	latest = tail(dir_path + pfx2as_log, 1)
+	latest = tail(dir_path+pfx2as_log, 1)
 
 	try:
 		suffix_url = latest[0].split()[2]
@@ -165,7 +165,7 @@ def read_asn_info(filename):
 def download_asn_info():
 	global download_file
 
-	asn_info_file = dir_path
+	asn_info_file = ""
 	download_file = dir_path + "asn_info"
 	del_asn_info = dir_path + "asn_info_*"
 	asn_info_latest = download_file + "_" + localtime
