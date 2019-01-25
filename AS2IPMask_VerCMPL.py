@@ -126,8 +126,7 @@ def download_pfx2as_file(log_url, prefix_url, del_filename):
 			print(">> old routeviews files have been removed")
 
 		try:
-			# print(prefix_url + suffix_url)
-			urllib.request.urlretrieve(prefix_url + suffix_url, download_file, _callback_func)
+			urllib.request.urlretrieve(prefix_url+suffix_url, download_file, _callback_func)
 
 		except Exception as e:
 			print()
@@ -148,7 +147,7 @@ def read_asn_info(filename):
 	global asn_info
 	asn_info.clear()
 
-	with open(filename, "r", encoding = "ISO-8859-1") as input_file:
+	with open(filename, "r", encoding="ISO-8859-1") as input_file:
 		infile_line = input_file.readline().strip('\n')
 		pattern = re.compile(r'<a href="/cgi-bin/as-report\?as=.*">AS(.*)</a>(.*)')
 
@@ -415,8 +414,6 @@ def main():
 		print("IP version value error, check config.ini.")
 		logging.error("IP version value error, check config.ini.")
 		sys.exit()
-
-	# os.system("pause")
 
 
 if __name__ == '__main__':

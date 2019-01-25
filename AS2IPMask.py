@@ -147,7 +147,7 @@ def read_asn_info(filename):
 	global asn_info
 	asn_info.clear()
 
-	with open(filename, "r", encoding = "ISO-8859-1") as input_file:
+	with open(filename, "r", encoding="ISO-8859-1") as input_file:
 		infile_line = input_file.readline().strip('\n')
 		pattern = re.compile(r'<a href="/cgi-bin/as-report\?as=.*">AS(.*)</a>(.*)')
 
