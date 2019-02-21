@@ -10,6 +10,7 @@ import time
 import gzip
 import glob
 import socket
+import netaddr
 import logging
 from collections import deque
 from six.moves import urllib
@@ -56,19 +57,13 @@ def read_pfx2as_file(filename, asn_ipmask):
 		infile_line = input_file.readline().strip('\n')
 
 		while(infile_line):
-			as_list = []
-			sub_ip_list = []
 			line_list = infile_line.split()
 			
 			ip = line_list[0]
 			mask = line_list[1]
 			asn = line_list[2]
 
-			if(int(mask) < 16):
-				ip_mask = IPNetwork(ip + "/" + mask)
-				sub_ip_list = list(ip_mask.subnet(16))
-			else:
-				sub_ip_list.append(ip + "/" + mask)
+			as_list = []
 
 			if ',' in asn or '_' in asn:
 				as_list = re.split('[,_]', asn)
@@ -76,17 +71,28 @@ def read_pfx2as_file(filename, asn_ipmask):
 				as_list.append(asn)
 
 			for as_num in as_list:
-				for sub_ip_mask in sub_ip_list:
-					if as_num in asn_ipmask.keys():
-						if str(sub_ip_mask) in asn_ipmask[as_num]:
-							pass
-						else:
-							asn_ipmask[as_num].append(str(sub_ip_mask))
-					else:
-						asn_ipmask[as_num] = []
-						asn_ipmask[as_num].append(str(sub_ip_mask))
+				ip_net = IPNetwork(ip + "/" + mask)
+
+				if(asn_ipmask.get(as_num)!= None):
+					asn_ipmask[as_num].append(ip_net)
+				else:
+					asn_ipmask[as_num] = []
+					asn_ipmask[as_num].append(ip_net)
 			
 			infile_line = input_file.readline().strip('\n')
+
+	for asn in asn_ipmask.keys():
+		sub_ip_list = []
+		ip_list = netaddr.cidr_merge(asn_ipmask[asn])
+
+		for ip in ip_list:
+			if(ip.prefixlen < 16):
+				sub_ip_list.extend(list(ip.subnet(16)))
+			else:
+				sub_ip_list.append(ip)
+
+		asn_ipmask[asn] = sub_ip_list
+
 
 
 def download_pfx2as_file(log_url, prefix_url, del_filename):
@@ -226,7 +232,8 @@ def lookup_asn_info(asn):
 	asn_item_info["details"] = ""
 	asn_item_info["country_code"] = ""
 
-	if asn in asn_info.keys():
+	if(asn_info.get(asn)!= None):
+	# if asn in asn_info.keys():
 		asn_item_info["details"] = asn_info[asn]
 		asn_info_list1 = asn_info[asn].split(" - ")
 		asn_info_list2 = asn_info[asn].split(", ")
@@ -264,7 +271,7 @@ def write_to_excel(conf_list, asn_ipmask, outfile_name, del_filename):
 				row = []
 				row.append(an_asn_info["as_name"])
 				row.append(asn)
-				row.append(ip_mask)
+				row.append(str(ip_mask))
 				row.append(an_asn_info["details"])
 				row.append(an_asn_info["country_code"])
 				ws.append(row)
@@ -274,14 +281,15 @@ def write_to_excel(conf_list, asn_ipmask, outfile_name, del_filename):
 			asn = asn.strip()
 
 			if(asn):
-				if asn in asn_ipmask.keys():
+				if(asn_ipmask.get(asn)!= None):
+				# if asn in asn_ipmask.keys():
 					an_asn_info = lookup_asn_info(asn)
 
 					for ip_mask in asn_ipmask[asn]:
 						row = []
 						row.append(an_asn_info["as_name"])
 						row.append(asn)
-						row.append(ip_mask)
+						row.append(str(ip_mask))
 						row.append(an_asn_info["details"])
 						row.append(an_asn_info["country_code"])
 						ws.append(row)
